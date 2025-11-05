@@ -1,0 +1,104 @@
+service:
+  url:
+    auth: ${AUTH_SERVICE_URL:http://auth-service:8080}
+    users: ${USERS_SERVICE_URL:http://user-service:8080}
+    images: ${IMAGES_SERVICE_URL:http://image-service:8080}
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    bundle: api-gateway
+
+spring:
+  application:
+    name: Image Gallery Api Gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jws-algorithms: RS512
+          public-key-location: "file:/app/certs/auth/auth-pubkey.pem"
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+
+          routes:
+            - id: user-service
+              uri: ${service.url.users}
+              predicates:
+                - Path=/api/users/**
+            - id: auth-service
+              uri: ${service.url.auth}
+              predicates:
+                - Path=/api/auth/**
+            - id: image-service
+              uri: ${service.url.images}
+              predicates:
+                - Path=/api/image/**
+              filters:
+                - name: RequestSize
+                  args:
+                    maxSize: 30MB
+
+          default-filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+            - RequestHeaderSize=1000B
+            - name: RequestSize
+              args:
+                maxSize: 5MB
+            - name: SecureHeaders
+            - name: TokenInvalidationChecker
+            - name: TokenRelay
+            - name: JwtToHeaders
+
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 4s
+
+          filter:
+            request-rate-limiter:
+              deny-empty-key: true
+              empty-key-status-code: 403
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+      database: 0
+      username: ${REDIS_USER:testRedisUser}
+      password: ${REDIS_PASSWORD:testRedisUserPassword}
+      client-type: lettuce
+      connect-timeout: 2s
+      timeout: 2s
+      repositories:
+        enabled: false
+      lettuce:
+        pool:
+          max-wait: 2s
+
+  ssl:
+    bundle:
+      pem:
+        api-gateway:
+          keystore:
+            certificate: "file:/app/certs/gateway/gateway-server.pem"
+            private-key: "file:/app/certs/gateway/gateway-server.key"
+
+---
+#For CDS test run
+spring:
+  config:
+    activate:
+      on-profile: cds
+server:
+  ssl:
+    enabled: false
