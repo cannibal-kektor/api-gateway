@@ -58,6 +58,6 @@ RUN $JAVA_HOME/bin/java \
       -XX:ArchiveClassesAtExit=app.jsa \
       -Dspring.context.exit=onRefresh \
       -jar app.jar \
-      --spring.profiles.active=cds
+      --spring.profiles.active=smoke
 # Start the application jar with CDS enabled
 ENTRYPOINT ["java", "-XX:SharedArchiveFile=app.jsa", "-jar", "app.jar"]

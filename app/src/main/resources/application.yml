@@ -3,6 +3,11 @@ service:
     auth: ${AUTH_SERVICE_URL:http://auth-service:8080}
     users: ${USERS_SERVICE_URL:http://user-service:8080}
     images: ${IMAGES_SERVICE_URL:http://image-service:8080}
+    comments: ${COMMENTS_SERVICE_URL:http://comment-service:8080}
+  public-endpoints: >
+    /api/auth/login,
+    /api/auth/refresh,
+    /api/users/register
 
 server:
   port: 8443
@@ -16,7 +21,7 @@ spring:
 
   security:
     oauth2:
-      resourceserver:
+      resource-server:
         jwt:
           jws-algorithms: RS512
           public-key-location: "file:/app/certs/auth/auth-pubkey.pem"
@@ -25,7 +30,6 @@ spring:
     gateway:
       server:
         webflux:
-
           routes:
             - id: user-service
               uri: ${service.url.users}
@@ -35,15 +39,18 @@ spring:
               uri: ${service.url.auth}
               predicates:
                 - Path=/api/auth/**
+            - id: comment-service
+              uri: ${service.url.comments}
+              predicates:
+                - Path=/api/comments/**
             - id: image-service
               uri: ${service.url.images}
               predicates:
-                - Path=/api/image/**
+                - Path=/api/images/**
               filters:
                 - name: RequestSize
                   args:
-                    maxSize: 30MB
-
+                    maxSize: 50MB
           default-filters:
             - name: RequestRateLimiter
               args:
@@ -51,7 +58,7 @@ spring:
                 redis-rate-limiter.replenishRate: 5
                 redis-rate-limiter.burstCapacity: 10
                 redis-rate-limiter.requestedTokens: 1
-            - RequestHeaderSize=1000B
+            - RequestHeaderSize=1MB
             - name: RequestSize
               args:
                 maxSize: 5MB
@@ -71,7 +78,7 @@ spring:
 
   data:
     redis:
-      host: redis
+      host: ${REDIS_HOST:redis}
       port: 6379
       database: 0
       username: ${REDIS_USER:testRedisUser}
@@ -94,11 +101,37 @@ spring:
             private-key: "file:/app/certs/gateway/gateway-server.key"
 
 ---
-#For CDS test run
+#Configuration for dev profile
 spring:
   config:
     activate:
-      on-profile: cds
+      on-profile: dev
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          public-key-location: classpath:/keys/auth-pubkey.pem
+  data:
+    redis:
+      host: localhost
+server:
+  port: 8084
+  ssl:
+    enabled: false
+
+service:
+  url:
+    auth: ${AUTH_SERVICE_URL:http://localhost:8080}
+    users: ${USERS_SERVICE_URL:http://localhost:8081}
+    images: ${IMAGES_SERVICE_URL:http://localhost:8082}
+    comments: ${COMMENTS_SERVICE_URL:http://localhost:8083}
+
+---
+#For smoke test run
+spring:
+  config:
+    activate:
+      on-profile: smoke
 server:
   ssl:
     enabled: false

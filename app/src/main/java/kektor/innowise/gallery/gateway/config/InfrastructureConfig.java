@@ -25,7 +25,7 @@ public class InfrastructureConfig {
     }
 
     @Bean
-    @Profile("cds")
+    @Profile("smoke")
     @Scope(SCOPE_SINGLETON)
     public ReactiveJwtDecoder emptyReactiveJwtDecoder() {
         return _ -> Mono.empty();
