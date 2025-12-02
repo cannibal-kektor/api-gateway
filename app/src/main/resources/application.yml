@@ -100,6 +100,44 @@ spring:
             certificate: "file:/app/certs/gateway/gateway-server.pem"
             private-key: "file:/app/certs/gateway/gateway-server.key"
 
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+---
+#Configuration for swagger/openapi
+spring:
+  config:
+    activate:
+      on-profile: dev, smoke
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    urls:
+      - url: /api/users/v3/api-docs
+        name: User Service
+      - url: /api/images/v3/api-docs
+        name: Image Service
+      - url: /api/auth/v3/api-docs
+        name: Authentication Service
+      - url: /api/comments/v3/api-docs
+        name: Comment Service
+service:
+  public-endpoints: >
+    /swagger-ui/**,
+    /v3/api-docs/**,
+    /api/users/v3/**,
+    /api/images/v3/**,
+    /api/auth/v3/**,
+    /api/comments/v3/**,
+    /api/auth/login,
+    /api/auth/refresh,
+    /api/users/register
 ---
 #Configuration for dev profile
 spring:
@@ -125,7 +163,6 @@ service:
     users: ${USERS_SERVICE_URL:http://localhost:8081}
     images: ${IMAGES_SERVICE_URL:http://localhost:8082}
     comments: ${COMMENTS_SERVICE_URL:http://localhost:8083}
-
 ---
 #For smoke test run
 spring:
