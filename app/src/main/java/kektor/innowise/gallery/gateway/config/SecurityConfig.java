@@ -29,6 +29,7 @@ public class SecurityConfig {
         return http
                 .authorizeExchange(exchange ->
                         exchange
+                                .pathMatchers("/actuator/health/**").permitAll()
                                 .pathMatchers(publicEndpoints).permitAll()
                                 .anyExchange().authenticated()
                 )
