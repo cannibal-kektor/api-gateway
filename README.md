@@ -1,1 +1,2 @@
-# Image Gallery Api-Gateway
+# Image Gallery Api-Gateway microservice
+Built on **Spring Cloud Gateway**. Implements service routing, **Rate Limiting**, Request Size filtering, and **HTTPS termination**. It validates JWT tokens and relays user identity to downstream services.
